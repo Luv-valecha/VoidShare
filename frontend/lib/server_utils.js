@@ -13,9 +13,10 @@ export const getPeerId = () => {
 }
 
 export const connectserver = (onSignalMessage, onStatusUpdate) => {
-    ws = new WebSocket(
-        process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `ws://${window.location.hostname}:3001`
-    );
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
 
     // registering peerid at the socket
     ws.onopen = () => {
