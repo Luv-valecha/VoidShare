@@ -14,7 +14,7 @@ export const getPeerId = () => {
 
 export const connectserver = (onSignalMessage, onStatusUpdate) => {
     ws = new WebSocket(
-        process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `wss://${window.location.host}`
+        process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `ws://${window.location.hostname}:3001`
     );
 
     // registering peerid at the socket
