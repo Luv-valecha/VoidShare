@@ -1,0 +1,11 @@
+{
+  "name": "voidshare",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "concurrently \"node server/server.js\" \"npm --prefix frontend start\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

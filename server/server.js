@@ -8,7 +8,7 @@ const server = http.createServer((req, res) => {
 });
 
 // Listen on the environment-defined port
-const PORT = process.env.PORT || 3001;
+const PORT = 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTP/WebSocket server running on port ${PORT}`);
 });
