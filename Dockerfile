@@ -26,7 +26,7 @@ COPY --from=builder /app/frontend/.next ./frontend/.next
 COPY --from=builder /app/frontend/public ./frontend/public
 COPY --from=builder /app/frontend/package.json ./frontend/package.json
 COPY --from=builder /app/frontend/node_modules ./frontend/node_modules
-COPY --from=builder /app/frontend/next.config.js ./frontend/next.config.js
+COPY --from=builder /app/frontend/next.config.mjs ./frontend/next.config.mjs
 
 # Install any server dependencies if needed
 WORKDIR /app/server
