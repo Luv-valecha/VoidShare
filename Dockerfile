@@ -1,4 +1,4 @@
-# Stage 1: Build frontend
+# Stage 1: Build the frontend
 FROM node:18 AS builder
 
 WORKDIR /app
@@ -7,30 +7,26 @@ WORKDIR /app/frontend
 RUN npm install
 RUN npm run build
 
-# Stage 2: Production container
+# Stage 2: Final production image
 FROM node:18
 
 WORKDIR /app
 
-# Install root dependencies (concurrently)
-COPY package.json package-lock.json ./
-RUN npm install
-
-# Copy server
+# Copy server code
 COPY server ./server
 WORKDIR /app/server
 RUN npm install
 
-# Copy built frontend
+# Copy frontend build & deps
 WORKDIR /app
-COPY --from=builder /app/frontend/.next ./frontend/.next
-COPY --from=builder /app/frontend/public ./frontend/public
-COPY --from=builder /app/frontend/package.json ./frontend/package.json
-COPY --from=builder /app/frontend/node_modules ./frontend/node_modules
-COPY --from=builder /app/frontend/next.config.mjs ./frontend/next.config.mjs
+COPY --from=builder /app/frontend ./frontend
 
-# Expose only one port (Render expects 3000)
+# Install root dependencies (optional, only if needed for server)
+COPY package.json package-lock.json ./
+RUN npm install || true
+
+# Expose only ONE port for Render
 EXPOSE 3000
 
-# Start both servers using concurrently
-CMD ["npm", "run", "start"]
+# Start server (which handles Next.js + WebSocket)
+CMD ["node", "server/server.js"]
