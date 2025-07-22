@@ -16,7 +16,7 @@ export const connectserver = (onSignalMessage, onStatusUpdate) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
 
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
+    ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
 
     // registering peerid at the socket
     ws.onopen = () => {
@@ -52,12 +52,17 @@ export const connectserver = (onSignalMessage, onStatusUpdate) => {
 
 // to send the signal to socket server
 export const sendSignal = (targetId, data) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket not ready — signal not sent.");
+        return;
+    }
+
     ws.send(JSON.stringify({
         type: "signal",
         target: targetId,
         data,
     }));
-}
+};
 
 export const createConnection = async (targetId, onData, onReady) => {
     remotePeerId = targetId;
