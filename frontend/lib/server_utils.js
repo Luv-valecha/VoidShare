@@ -13,42 +13,47 @@ export const getPeerId = () => {
 }
 
 export const connectserver = (onSignalMessage, onStatusUpdate) => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    return new Promise((resolve, reject) => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
 
-    ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
+        ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
 
-    // registering peerid at the socket
-    ws.onopen = () => {
-        ws.send(JSON.stringify({ type: "register", peerId }));
-        console.log(`WebSocket connected for ${peerId}`);
-    }
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ type: "register", peerId }));
+            console.log(`WebSocket connected for ${peerId}`);
+            resolve(); // ✅ WebSocket is ready!
+        };
 
-    // on message to the socket(ICE/offer/answer) we call the callback
-    ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
+        ws.onerror = (err) => {
+            console.error("WebSocket connection error", err);
+            reject(err);
+        };
 
-        if (msg.type === "signal") {
-            onSignalMessage(msg.from, msg.data);
-        }
+        ws.onmessage = (e) => {
+            const msg = JSON.parse(e.data);
 
-        if (msg.type === "answer") {
-            onStatusUpdate?.("accepted", msg.from);
-            onSignalMessage(msg.from, msg.data);
-        }
-
-        if (msg.type === "decline") {
-            onStatusUpdate?.("declined", msg.from);
-        }
-
-        if (msg.type === "error") {
-            if (typeof window !== "undefined" && window.showConnectionError) {
-                window.showConnectionError(msg.message);
+            if (msg.type === "signal") {
+                onSignalMessage(msg.from, msg.data);
             }
-        }
-    };
 
-}
+            if (msg.type === "answer") {
+                onStatusUpdate?.("accepted", msg.from);
+                onSignalMessage(msg.from, msg.data);
+            }
+
+            if (msg.type === "decline") {
+                onStatusUpdate?.("declined", msg.from);
+            }
+
+            if (msg.type === "error") {
+                if (typeof window !== "undefined" && window.showConnectionError) {
+                    window.showConnectionError(msg.message);
+                }
+            }
+        };
+    });
+};
 
 // to send the signal to socket server
 export const sendSignal = (targetId, data) => {

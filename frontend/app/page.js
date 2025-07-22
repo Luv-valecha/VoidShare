@@ -35,36 +35,46 @@ export default function Home() {
   const [encrypting, setEncrypting] = useState(false);
 
   useEffect(() => {
-    setMyId(getPeerId());
-    connectserver((from, data) => {
-      handleSignal(from, data, handleData, handleOffer);
-    }, (status, from) => {
-      if (status === "accepted") {
-        toast.success(`✅ ${from} accepted your connection request`);
-        setConnected(true);
-      } else if (status === "declined") {
-        toast.error(`❌ ${from} declined your connection request`);
-        setConnected(false);
-      }
-    });
-    window.showConnectionError = (message) => {
-      toast.error(message || "Connection failed.");
-    };
-    const generateKeys = async () => {
-      const keyPair = await crypto.subtle.generateKey(
-        {
-          name: "ECDH",
-          namedCurve: "P-256",
+    const setup = async () => {
+      setMyId(getPeerId());
+
+      // Wait for WebSocket connection to be established
+      await connectserver(
+        (from, data) => {
+          handleSignal(from, data, handleData, handleOffer);
         },
-        true,
-        ["deriveKey"]
+        (status, from) => {
+          if (status === "accepted") {
+            toast.success(`✅ ${from} accepted your connection request`);
+            setConnected(true);
+          } else if (status === "declined") {
+            toast.error(`❌ ${from} declined your connection request`);
+            setConnected(false);
+          }
+        }
       );
-      setPrivateKey(keyPair.privateKey);
-      setPublicKey(keyPair.publicKey);
+
+      window.showConnectionError = (message) => {
+        toast.error(message || "Connection failed.");
+      };
+
+      const generateKeys = async () => {
+        const keyPair = await crypto.subtle.generateKey(
+          {
+            name: "ECDH",
+            namedCurve: "P-256",
+          },
+          true,
+          ["deriveKey"]
+        );
+        setPrivateKey(keyPair.privateKey);
+        setPublicKey(keyPair.publicKey);
+      };
+
+      await generateKeys();
     };
 
-    generateKeys();
-    setMyId(getPeerId());
+    setup(); // Call the async setup logic
 
     const handleBeforeUnload = () => {
       if (connected) {
@@ -77,7 +87,6 @@ export default function Home() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-
   }, []);
 
   useEffect(() => {
