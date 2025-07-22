@@ -1,11 +1,23 @@
 {
-  "name": "voidshare",
-  "private": true,
+  "name": "server",
+  "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cd frontend && npm install && npm run build",
     "start": "concurrently \"node server/server.js\" \"npm --prefix frontend start\""
   },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "dependencies": {
-    "concurrently": "^8.2.0"
+    "ws": "^8.18.3",
+    "concurrently": "^8.2.0",
+    "next": "15.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-toastify": "^11.0.5"
   }
 }

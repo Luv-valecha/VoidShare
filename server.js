@@ -1,23 +1,23 @@
-import { WebSocketServer } from "ws";
-import http from "http";
+// server.js
 import next from "next";
+import http from "http";
+import { WebSocketServer } from "ws";
+import { parse } from "url";
 
+const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev, dir: "./frontend" });
 const handle = app.getRequestHandler();
 
-const PORT = process.env.PORT || 3000;
+const peers = new Map();
 
 app.prepare().then(() => {
-  // Create HTTP server
   const server = http.createServer((req, res) => {
-    handle(req, res); // Let Next.js handle frontend routes
+    const parsedUrl = parse(req.url, true);
+    handle(req, res, parsedUrl);
   });
 
-  // Attach WebSocket server to HTTP server
   const wss = new WebSocketServer({ server });
-
-  const peers = new Map();
 
   wss.on("connection", (ws) => {
     let peerId = null;
@@ -25,9 +25,7 @@ app.prepare().then(() => {
     ws.on("message", (message) => {
       try {
         const msg = JSON.parse(message);
-
         if (msg.type === "register") {
-          console.log(`${msg.peerId} connected`);
           peerId = msg.peerId;
           peers.set(peerId, ws);
         }
@@ -39,10 +37,10 @@ app.prepare().then(() => {
               message: `Peer ID ${msg.target} not found.`,
             }));
           } else {
-            const targetWS = peers.get(msg.target);
-            if (targetWS) {
-              targetWS.send(JSON.stringify({
-                type: msg.data?.type || "signal",
+            const target = peers.get(msg.target);
+            if (target) {
+              target.send(JSON.stringify({
+                type: msg.data?.type ?? "signal",
                 from: peerId,
                 data: msg.data,
               }));
@@ -59,8 +57,7 @@ app.prepare().then(() => {
     });
   });
 
-  // Start everything
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`✅ Server + WebSocket + Next.js running on port ${PORT}`);
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`> Ready on http://localhost:${port}`);
   });
 });
