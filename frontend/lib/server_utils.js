@@ -4,6 +4,10 @@ let ws;
 let pendingOffer;
 let remotePeerId;
 let pendingCandidates = [];
+let sendQueue = [];
+let sendingPaused = false;
+const MAX_BUFFER = 16 * 1024 * 1024; // 16 MB
+const RESUME_THRESHOLD = 64 * 1024;  // 64 KB
 
 const peerId = Math.random().toString(36).substring(2, 10);
 
@@ -14,10 +18,11 @@ export const getPeerId = () => {
 
 export const connectserver = (onSignalMessage, onStatusUpdate) => {
     return new Promise((resolve, reject) => {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
+        // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // const host = window.location.host;
 
-        ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || `${protocol}//${host}`);
+        ws = new WebSocket(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || "https://voidshareserver.onrender.com/");
+        // ws = new WebSocket("ws://localhost:4000");
 
         ws.onopen = () => {
             ws.send(JSON.stringify({ type: "register", peerId }));
@@ -69,12 +74,43 @@ export const sendSignal = (targetId, data) => {
     }));
 };
 
+function setupBufferHandling(channel) {
+    channel.bufferedAmountLowThreshold = RESUME_THRESHOLD;
+
+    channel.onbufferedamountlow = () => {
+        console.log("🟢 Buffer drained — resuming send");
+        sendingPaused = false;
+        flushQueue();
+    };
+}
+
+function flushQueue() {
+    while (!sendingPaused && sendQueue.length > 0) {
+        const {chunk,resolve} = sendQueue.shift();
+
+        if (dataChannel.bufferedAmount + chunk.byteLength > MAX_BUFFER) {
+            console.log("Buffer high — pausing send");
+            sendingPaused = true;
+            sendQueue.unshift({chunk,resolve});
+            break;
+        }
+
+        dataChannel.send(chunk);
+        resolve();
+    }
+}
+
 export const createConnection = async (targetId, onData, onReady) => {
     remotePeerId = targetId;
-    localConnection = new RTCPeerConnection();
+    localConnection = new RTCPeerConnection({
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }
+        ]
+    });
 
     // setting up data channel for file transfer
     dataChannel = localConnection.createDataChannel("file");
+    setupBufferHandling(dataChannel);
     dataChannel.binaryType = "arraybuffer";
     dataChannel.onopen = () => {
         console.log(`DataChannel open between ${peerId} and ${remotePeerId}`);
@@ -106,6 +142,7 @@ export const handleSignal = async (from, data, onData, onOfferReceived) => {
         localConnection.ondatachannel = (event) => {
             dataChannel = event.channel;
             dataChannel.binaryType = "arraybuffer";
+            setupBufferHandling(dataChannel);
 
             dataChannel.onmessage = (e) => onData(e.data);
         };
@@ -148,11 +185,13 @@ export const handleSignal = async (from, data, onData, onOfferReceived) => {
     }
 };
 
-
 export const sendChunk = (chunk) => {
-    if (dataChannel?.readyState === "open") {
-        dataChannel.send(chunk);
-    }
+    if (dataChannel?.readyState !== "open") return Promise.reject(new Error("Channel not open"));
+
+    return new Promise((resolve) => {
+        sendQueue.push({ chunk, resolve });
+        flushQueue();
+    });
 };
 
 export const acceptOffer = async (from) => {

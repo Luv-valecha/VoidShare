@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -13,6 +14,8 @@ import {
   declineOffer,
 } from "../lib/server_utils";
 import { decryptWithAES, deriveSharedKey, encryptWithAES, exportAESKey, generateAESKey, importAESKey } from "@/lib/crypto_utils";
+import Link from "next/link";
+import QrCode from "@/components/QrCode.js";
 
 export default function Home() {
   const [myId, setMyId] = useState("");
@@ -33,6 +36,24 @@ export default function Home() {
   const [connected, setConnected] = useState(false);
   const [copying, setCopying] = useState(false);
   const [encrypting, setEncrypting] = useState(false);
+
+  const [backendReady, setBackendReady] = useState(true);
+  const [setupdone, setSetupdone] = useState(false);
+  const incomingFileRef = useRef(null);
+
+  useEffect(() => {
+    setBackendReady(false);
+    (async () => {
+      try {
+        const res = await fetch(process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL || "https://voidshareserver.onrender.com");
+      } catch (err) {
+        console.error("Error connecting to backend:", err);
+        toast.error("Failed to connect to backend. Please try again later.");
+      } finally {
+        setBackendReady(true);
+      }
+    })();
+  }, [])
 
   useEffect(() => {
     const setup = async () => {
@@ -72,9 +93,10 @@ export default function Home() {
       };
 
       await generateKeys();
+      setSetupdone(true);
     };
 
-    setup(); // Call the async setup logic
+    setup();
 
     const handleBeforeUnload = () => {
       if (connected) {
@@ -107,6 +129,25 @@ export default function Home() {
       })();
     }
   }, [publicKey, peerPublicKey, privateKey]);
+
+  useEffect(() => {
+    if (!setupdone) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const peerId = searchParams.get("peerId");
+    if (peerId) {
+      setFriendId(peerId);
+      toast.info(`Connecting to peer: ${peerId}`);
+      createConnection(peerId, handleData, async (ready) => {
+        if (ready) toast("Ready to send file!");
+
+        const exported = await crypto.subtle.exportKey("raw", publicKey);
+        await sendChunk(JSON.stringify({
+          type: "publicKey",
+          key: Array.from(new Uint8Array(exported))
+        }));
+      });
+    }
+  }, [setupdone]);
 
   const handleOffer = (from) => {
     toast(({ closeToast }) => (
@@ -150,15 +191,17 @@ export default function Home() {
           const parsed = JSON.parse(data);
 
           if (parsed.type === "metadata") {
-            setIncomingFile((prev) => ({
-              ...prev,
+            setIsReceiving(true);
+            const fileMeta = {
               name: parsed.name,
               type: parsed.fileType,
               size: parsed.size,
               keyIV: parsed.keyIV,
               encryptedAESKey: parsed.encryptedAESKey,
               fileIV: parsed.fileIV,
-            }));
+            };
+            setIncomingFile(fileMeta);
+            incomingFileRef.current = fileMeta;
           }
 
 
@@ -202,9 +245,9 @@ export default function Home() {
     // Binary chunk
     setReceivedChunks((prev) => {
       const updated = [...prev, data];
-      if (incomingFile?.size) {
+      if (incomingFileRef.current?.size) {
         const receivedSize = updated.reduce((acc, chunk) => acc + chunk.byteLength, 0);
-        const percentage = Math.min(100, (receivedSize / incomingFile.size) * 100);
+        const percentage = Math.min(100, (receivedSize / incomingFileRef.current.size) * 100);
         setReceivingProgress(percentage);
       }
       return updated;
@@ -226,13 +269,15 @@ export default function Home() {
 
     setEncrypting(true);
     try {
-      const chunkSize = 64 * 1024;
+      const chunkSize = 32 * 1024;
       const buffer = await selectedFile.arrayBuffer();
 
       const aesKey = await generateAESKey();
       const { iv, encrypted } = await encryptWithAES(aesKey, buffer);
 
       const rawAesKey = await exportAESKey(aesKey);
+      if (!peerPublicKey) {
+      }
       const sharedKey = await deriveSharedKey(privateKey, peerPublicKey);
       const { iv: KeyIV, encrypted: encryptedAESKey } = await encryptWithAES(sharedKey, rawAesKey);
 
@@ -257,6 +302,7 @@ export default function Home() {
         const percent = Math.min(100, (offset + chunkSize) / encrypted.byteLength * 100);
         setSendingProgress(percent);
         await new Promise(r => setTimeout(r, 10));
+
       }
 
       sendChunk("__END__");
@@ -315,7 +361,7 @@ export default function Home() {
     a.click();
     URL.revokeObjectURL(url);
 
-    toast.success("✅ File downloaded and decrypted.");
+    toast.success("✅ File decrypted and downloaded.");
   };
 
   const disconnectPeer = () => {
@@ -337,6 +383,30 @@ export default function Home() {
     toast.info("Disconnected.");
   };
 
+  if (!backendReady) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black to-gray-900 text-white z-50">
+        {/* Logo & App name */}
+        <div className="flex items-center gap-3 mb-8">
+          <span className="text-red-500 text-4xl animate-pulse">⚡</span>
+          <h1 className="text-3xl font-bold text-red-400 tracking-wider drop-shadow-lg">
+            VoidShare
+          </h1>
+        </div>
+
+        {/* Spinner */}
+        <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+
+        {/* Loading dots */}
+        <p className="mt-8 text-gray-400 text-lg flex items-center">
+          Loading
+          <span className="animate-bounce">.</span>
+          <span className="animate-bounce delay-150">.</span>
+          <span className="animate-bounce delay-300">.</span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white p-8 font-mono">
@@ -344,6 +414,14 @@ export default function Home() {
         <h1 className="text-5xl font-bold text-center mb-6 text-red-500 drop-shadow-[0_0_15px_rgba(255,0,0,0.9)] animate-pulse">
           ⚡ VoidShare
         </h1>
+        <Link href="/devlogs">
+          <button
+            className="fixed top-6 right-6 px-4 py-2 text-sm bg-gray-800 border border-red-500 rounded-lg font-semibold 
+               hover:bg-red-500 hover:border-red-400 hover:scale-105 transition-all cursor-pointer"
+          >
+            📜 View DevLogs
+          </button>
+        </Link>
 
         {/* Peer ID Card */}
         <div className="bg-zinc-900/70 backdrop-blur-md p-5 rounded-xl border border-zinc-700 shadow-[0_0_15px_rgba(0,0,0,0.4)]">
@@ -453,7 +531,7 @@ export default function Home() {
           )}
 
           {/* Download Button */}
-          {receivedChunks.length > 0 && (
+          {receivedChunks.length > 0 && !isReceiving && (
             <button
               onClick={handleDownload}
               className="w-full bg-gradient-to-br from-blue-700 via-red-600 to-blue-900 px-4 py-2 rounded-lg hover:shadow-xl transition duration-300"
@@ -462,6 +540,36 @@ export default function Home() {
             </button>
           )}
         </div>
+        <div className="inline-flex flex-col items-center">
+          <QrCode peerId={myId} />
+        </div>
+        <div>
+          <p className="text-red-500 animate-pulse">
+            Note: When connecting between a desktop and a mobile device, use the desktop to initiate the connection.
+          </p>
+        </div>
+        <a
+          href="https://github.com/Luv-valecha/VoidShare"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 flex items-center space-x-2 bg-gradient-to-r from-gray-800 to-gray-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-transform cursor-pointer"
+        >
+          {/* GitHub SVG logo */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12 0C5.37 0 0 5.37 0 12a12 12 0 008.21 11.44c.6.11.82-.26.82-.58v-2.17c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.83 1.24 1.83 1.24 1.07 1.83 2.8 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.48-1.34-5.48-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 016 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.62-2.81 5.65-5.49 5.95.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0024 12c0-6.63-5.37-12-12-12z"
+              clipRule="evenodd"
+            />
+          </svg>
+
+          <span>GitHub</span>
+        </a>
       </div>
 
       <ToastContainer position="top-center" theme="dark" />
