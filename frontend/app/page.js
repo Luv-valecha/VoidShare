@@ -13,7 +13,7 @@ import {
   acceptOffer,
   declineOffer,
 } from "../lib/server_utils";
-import { decryptWithAES, deriveSharedKey, encryptWithAES, exportAESKey, generateAESKey, importAESKey } from "@/lib/crypto_utils";
+import { decryptWithAES, deriveSharedKey, encryptWithAES, exportAESKey, generateAESKey, importAESKey, computeFileHash, verifyFileHash } from "@/lib/crypto_utils";
 import Link from "next/link";
 import QrCode from "@/components/QrCode.js";
 
@@ -199,6 +199,7 @@ export default function Home() {
               keyIV: parsed.keyIV,
               encryptedAESKey: parsed.encryptedAESKey,
               fileIV: parsed.fileIV,
+              hash: parsed.hash,
             };
             setIncomingFile(fileMeta);
             incomingFileRef.current = fileMeta;
@@ -269,7 +270,7 @@ export default function Home() {
 
     setEncrypting(true);
     try {
-      const chunkSize = 32 * 1024;
+      const fileHash = await computeFileHash(selectedFile);
       const buffer = await selectedFile.arrayBuffer();
 
       const aesKey = await generateAESKey();
@@ -289,9 +290,11 @@ export default function Home() {
         keyIV: Array.from(KeyIV),
         encryptedAESKey: Array.from(new Uint8Array(encryptedAESKey)),
         fileIV: Array.from(iv),
+        hash: fileHash,
       }));
       setEncrypting(false);
 
+      const chunkSize = 32 * 1024;
       setIsSending(true);
       setSendingProgress(0);
 
@@ -353,6 +356,12 @@ export default function Home() {
     const encryptedBlob = new Blob(validChunks);
 
     const decryptedBlob = await decryptFile(encryptedBlob, aesKey, incomingFile.fileIV);
+    const fileVerified= await verifyFileHash(decryptedBlob, incomingFile.hash);
+    
+    if (!fileVerified) {
+      toast.error("File integrity check failed. The file may be corrupted.");
+      return;
+    }
 
     const url = URL.createObjectURL(decryptedBlob);
     const a = document.createElement("a");

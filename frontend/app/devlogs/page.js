@@ -4,6 +4,12 @@ import Link from "next/link";
 export default function DevLogs() {
   const logs = [
     {
+      date: "2025-08-16",
+      title: "Added File Integrity Check",
+      description:
+        "Added file integrity check using SHA-256 hashing. Now when you send a file, it computes the hash of the file and sends it along with the file. The receiver can verify the integrity of the file by comparing the received hash with the computed hash. This ensures that the file is not tampered with during transmission.",
+    },
+    {
       date: "2025-08-15",
       title: "Major Bug Fix",
       description:
