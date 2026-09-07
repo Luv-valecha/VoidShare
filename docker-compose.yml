@@ -1,0 +1,18 @@
+services:
+  server:
+    build: ./server
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    restart: unless-stopped
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SIGNALING_SERVER_URL=ws://localhost:4000
+    depends_on:
+      - server
+    restart: unless-stopped

@@ -1,0 +1,18 @@
+{
+  "name": "voidshare-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "WebRTC signaling server for VoidShare. Handles peer discovery and SDP/ICE exchange only \u2014 never touches file data.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
+  }
+}

@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050506;
+  --foreground: #f4f4f5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Soft ambient blobs behind the main card stack. Purely decorative. */
+.void-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.void-glow::before,
+.void-glow::after {
+  content: "";
+  position: absolute;
+  width: 42rem;
+  height: 42rem;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.22;
+}
+
+.void-glow::before {
+  top: -14rem;
+  left: -10rem;
+  background: radial-gradient(circle, #ef4444, transparent 70%);
+  animation: void-drift-a 16s ease-in-out infinite alternate;
+}
+
+.void-glow::after {
+  bottom: -16rem;
+  right: -12rem;
+  background: radial-gradient(circle, #2563eb, transparent 70%);
+  animation: void-drift-b 18s ease-in-out infinite alternate;
+}
+
+@keyframes void-drift-a {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(3rem, 2rem) scale(1.08);
+  }
+}
+
+@keyframes void-drift-b {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-2rem, -3rem) scale(1.05);
+  }
+}
+
+.glass-card {
+  background: color-mix(in oklab, #18181b 82%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, #ffffff 8%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .void-glow::before,
+  .void-glow::after {
+    animation: none;
+  }
+}
