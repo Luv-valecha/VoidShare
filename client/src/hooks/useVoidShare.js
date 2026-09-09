@@ -162,7 +162,7 @@ export function useVoidShare() {
           ({ closeToast }) => (
             <div className="p-1">
               <p className="font-medium text-sm">
-                Connection request from <b className="text-red-400">{from}</b>
+                Connection request from <b className="text-[var(--c-accent-soft)]">{from}</b>
               </p>
               <div className="flex gap-2 mt-3">
                 <button
@@ -182,7 +182,7 @@ export function useVoidShare() {
                     declineIncomingOffer(from);
                     closeToast();
                   }}
-                  className="px-3 py-1.5 text-xs font-semibold bg-zinc-700 text-white rounded-md hover:bg-red-600 transition"
+                  className="px-3 py-1.5 text-xs font-semibold bg-[var(--c-surface-2)] text-[var(--c-text)] hover:bg-[var(--c-accent-strong)] hover:text-white rounded-md transition"
                 >
                   Decline
                 </button>
@@ -252,6 +252,11 @@ export function useVoidShare() {
     const peerId = params.get("peerId");
     if (!peerId) return;
 
+    if (peerId === myId) {
+      toast.warn("That share link points to your own Peer ID \u2014 ignoring it.");
+      return;
+    }
+
     setFriendId(peerId);
     toast.info(`Connecting to peer: ${peerId}`);
     initiateConnection(peerId, channelHandlers());
@@ -259,12 +264,17 @@ export function useVoidShare() {
   }, [readyForUse]);
 
   const handleConnect = useCallback(() => {
-    if (!friendId) {
+    const trimmed = friendId.trim();
+    if (!trimmed) {
       toast.warn("Enter a peer ID first.");
       return;
     }
-    initiateConnection(friendId, channelHandlers());
-  }, [friendId, channelHandlers]);
+    if (trimmed === myId) {
+      toast.warn("You can't connect to your own Peer ID \u2014 share it with someone else instead.");
+      return;
+    }
+    initiateConnection(trimmed, channelHandlers());
+  }, [friendId, myId, channelHandlers]);
 
   const disconnectPeer = useCallback(() => {
     sendData(JSON.stringify({ type: "disconnect" })).catch(() => {});

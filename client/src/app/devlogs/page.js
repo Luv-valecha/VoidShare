@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const logs = [
+  {
+    date: "2026-09-09",
+    title: "Self-connect guard, ellipsis rendering fix, persistent sessions, themes, and more",
+    description:
+      "A batch of fixes and improvements. (1) You can no longer connect to your own Peer ID \u2014 the Connect button disables itself and explains why. (2) Fixed the sending/receiving progress bars literally showing the six characters \u201c\\u2026\u201d instead of an ellipsis \u2014 turns out JSX doesn't decode \\u escapes in attribute string literals, only inside real JS expressions, so those labels needed the actual \u2018\u2026\u2019 glyph. (3) Visiting DevLogs and coming back used to reset your Peer ID and drop any live connection, because navigating between pages unmounted the whole session hook. The session (peer id, RTCPeerConnection, DataChannel, transfer state) now lives in a context provider mounted at the layout level, above both pages, so it survives navigating away and back. (4) Added the Google Search Console site-verification meta tag. (5) Rebuilt the backend \u201cwaking up\u201d screen with an animated client/server handshake visual, rotating status messages, and an expandable note explaining the free-tier cold start. (6) Added 8 selectable themes (Void, Neon Synthwave, Abyssal Teal, Solar Flare, Forest Whisper, Royal Amethyst, Arctic Frost, and Sandstorm \u2014 the last two are light themes) via a palette icon in the header; your choice is remembered in localStorage and applied instantly with no flash on reload. (7) Re-checked every touched screen at mobile widths to keep things comfortable on small screens.",
+  },
   {
     date: "2026-09-07",
     title: "Fixed connections stuck on \u201cConnected\u201d with the channel never opening",
@@ -83,29 +90,33 @@ export default function DevLogs() {
       <div className="void-glow" />
 
       <div className="relative z-10 max-w-2xl mx-auto">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to VoidShare
-        </Link>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--c-text-muted)] hover:text-[var(--c-text)] transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to VoidShare
+          </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-1">
-          Dev<span className="text-red-500">Logs</span>
+          <ThemeSwitcher />
+        </div>
+
+        <h1 className="text-3xl font-bold text-[var(--c-text)] mb-1">
+          Dev<span className="text-[var(--c-accent)]">Logs</span>
         </h1>
-        <p className="text-sm text-zinc-500 mb-8">
+        <p className="text-sm text-[var(--c-text-dim)] mb-8">
           A running log of what changed and why, newest first.
         </p>
 
-        <ol className="space-y-4 border-l border-zinc-800 pl-6">
+        <ol className="space-y-4 border-l border-[var(--c-border-strong)] pl-6">
           {logs.map((log, i) => (
             <li key={i} className="relative">
-              <span className="absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
+              <span className="absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--c-accent)] shadow-[0_0_8px_color-mix(in_oklab,var(--c-accent)_70%,transparent)]" />
               <div className="glass-card rounded-xl p-4">
-                <p className="text-[11px] text-zinc-500 font-mono">{log.date}</p>
-                <h2 className="text-base font-semibold text-white mt-0.5 mb-1.5">{log.title}</h2>
-                <p className="text-sm text-zinc-400 leading-relaxed">{log.description}</p>
+                <p className="text-[11px] text-[var(--c-text-dim)] font-mono">{log.date}</p>
+                <h2 className="text-base font-semibold text-[var(--c-text)] mt-0.5 mb-1.5">{log.title}</h2>
+                <p className="text-sm text-[var(--c-text-muted)] leading-relaxed">{log.description}</p>
               </div>
             </li>
           ))}

@@ -1,20 +1,223 @@
 @import "tailwindcss";
 
-:root {
-  --background: #050506;
-  --foreground: #f4f4f5;
+/* ==========================================================================
+   Theme system
+   --------------------------------------------------------------------------
+   Every visual "theme" is just a set of CSS custom properties, switched by
+   putting a `data-theme="..."` attribute on <html> (see ThemeContext.js).
+   Components reference these variables (via Tailwind arbitrary values like
+   `bg-[var(--c-accent)]`) instead of hardcoded color utilities, so flipping
+   the attribute re-themes the entire app instantly — no re-render needed.
+
+   `:root` holds the "void" theme (VoidShare's original look) as the
+   fallback/default so the app never renders unstyled before hydration.
+   ========================================================================== */
+
+:root,
+[data-theme="void"] {
+  --c-bg-from: #000000;
+  --c-bg-to: #09090b;
+  --c-surface: #18181b;
+  --c-surface-2: #09090b;
+  --c-border: #ffffff14;
+  --c-border-strong: #3f3f46;
+  --c-text: #f4f4f5;
+  --c-text-muted: #a1a1aa;
+  --c-text-dim: #71717a;
+  --c-accent: #dc2626;
+  --c-accent-strong: #b91c1c;
+  --c-accent-soft: #f87171;
+  --c-accent2: #2563eb;
+  --c-accent2-strong: #1d4ed8;
+  --c-accent2-soft: #60a5fa;
+  --c-glow1: #ef4444;
+  --c-glow2: #2563eb;
+  --c-qr-dark: #f87171;
+  --c-qr-light: #09090b;
+  color-scheme: dark;
+}
+
+[data-theme="synthwave"] {
+  --c-bg-from: #0b0714;
+  --c-bg-to: #150a24;
+  --c-surface: #1a1030;
+  --c-surface-2: #0e0820;
+  --c-border: #ffffff17;
+  --c-border-strong: #4c2d75;
+  --c-text: #fbe8ff;
+  --c-text-muted: #c4a3e0;
+  --c-text-dim: #8b6ba8;
+  --c-accent: #ec4899;
+  --c-accent-strong: #be185d;
+  --c-accent-soft: #f9a8d4;
+  --c-accent2: #22d3ee;
+  --c-accent2-strong: #0891b2;
+  --c-accent2-soft: #67e8f9;
+  --c-glow1: #f472b6;
+  --c-glow2: #22d3ee;
+  --c-qr-dark: #f472b6;
+  --c-qr-light: #0e0820;
+  color-scheme: dark;
+}
+
+[data-theme="abyssal-teal"] {
+  --c-bg-from: #010b0a;
+  --c-bg-to: #04100f;
+  --c-surface: #0b1e1c;
+  --c-surface-2: #051312;
+  --c-border: #ffffff14;
+  --c-border-strong: #144d47;
+  --c-text: #e6fffb;
+  --c-text-muted: #7fd9cd;
+  --c-text-dim: #4f9d92;
+  --c-accent: #14b8a6;
+  --c-accent-strong: #0f766e;
+  --c-accent-soft: #2dd4bf;
+  --c-accent2: #818cf8;
+  --c-accent2-strong: #6366f1;
+  --c-accent2-soft: #a5b4fc;
+  --c-glow1: #2dd4bf;
+  --c-glow2: #818cf8;
+  --c-qr-dark: #2dd4bf;
+  --c-qr-light: #051312;
+  color-scheme: dark;
+}
+
+[data-theme="solar-flare"] {
+  --c-bg-from: #0d0602;
+  --c-bg-to: #170a03;
+  --c-surface: #24130a;
+  --c-surface-2: #150a03;
+  --c-border: #ffffff14;
+  --c-border-strong: #5c3417;
+  --c-text: #fff3e8;
+  --c-text-muted: #e0ac7f;
+  --c-text-dim: #a87b52;
+  --c-accent: #f59e0b;
+  --c-accent-strong: #b45309;
+  --c-accent-soft: #fbbf24;
+  --c-accent2: #fb7185;
+  --c-accent2-strong: #e11d48;
+  --c-accent2-soft: #fda4af;
+  --c-glow1: #f59e0b;
+  --c-glow2: #fb7185;
+  --c-qr-dark: #f59e0b;
+  --c-qr-light: #150a03;
+  color-scheme: dark;
+}
+
+[data-theme="forest-whisper"] {
+  --c-bg-from: #030c05;
+  --c-bg-to: #08120a;
+  --c-surface: #0f1f12;
+  --c-surface-2: #07120a;
+  --c-border: #ffffff14;
+  --c-border-strong: #234d2b;
+  --c-text: #eafff0;
+  --c-text-muted: #8fcf9e;
+  --c-text-dim: #5e9c6c;
+  --c-accent: #22c55e;
+  --c-accent-strong: #15803d;
+  --c-accent-soft: #4ade80;
+  --c-accent2: #eab308;
+  --c-accent2-strong: #a16207;
+  --c-accent2-soft: #facc15;
+  --c-glow1: #4ade80;
+  --c-glow2: #eab308;
+  --c-qr-dark: #4ade80;
+  --c-qr-light: #07120a;
+  color-scheme: dark;
+}
+
+[data-theme="royal-amethyst"] {
+  --c-bg-from: #08040e;
+  --c-bg-to: #0d0714;
+  --c-surface: #170f26;
+  --c-surface-2: #0c0716;
+  --c-border: #ffffff16;
+  --c-border-strong: #432a63;
+  --c-text: #f5efff;
+  --c-text-muted: #c1aee0;
+  --c-text-dim: #8c76ab;
+  --c-accent: #8b5cf6;
+  --c-accent-strong: #6d28d9;
+  --c-accent-soft: #a78bfa;
+  --c-accent2: #facc15;
+  --c-accent2-strong: #ca8a04;
+  --c-accent2-soft: #fde047;
+  --c-glow1: #a78bfa;
+  --c-glow2: #facc15;
+  --c-qr-dark: #a78bfa;
+  --c-qr-light: #0c0716;
+  color-scheme: dark;
+}
+
+[data-theme="arctic-frost"] {
+  --c-bg-from: #eef3f9;
+  --c-bg-to: #f7fafd;
+  --c-surface: #ffffff;
+  --c-surface-2: #eaf1f8;
+  --c-border: #0f172a1a;
+  --c-border-strong: #cbd5e1;
+  --c-text: #0f172a;
+  --c-text-muted: #475569;
+  --c-text-dim: #64748b;
+  --c-accent: #2563eb;
+  --c-accent-strong: #1d4ed8;
+  --c-accent-soft: #3b82f6;
+  --c-accent2: #0891b2;
+  --c-accent2-strong: #0e7490;
+  --c-accent2-soft: #06b6d4;
+  --c-glow1: #60a5fa;
+  --c-glow2: #22d3ee;
+  --c-qr-dark: #1d4ed8;
+  --c-qr-light: #ffffff;
+  color-scheme: light;
+}
+
+[data-theme="sandstorm"] {
+  --c-bg-from: #faf5ec;
+  --c-bg-to: #fdf9f2;
+  --c-surface: #ffffff;
+  --c-surface-2: #f5ebdb;
+  --c-border: #4314071a;
+  --c-border-strong: #e7d5b8;
+  --c-text: #431407;
+  --c-text-muted: #7c5a3a;
+  --c-text-dim: #96754f;
+  --c-accent: #c2410c;
+  --c-accent-strong: #9a3412;
+  --c-accent-soft: #ea580c;
+  --c-accent2: #0d9488;
+  --c-accent2-strong: #0f766e;
+  --c-accent2-soft: #14b8a6;
+  --c-glow1: #fb923c;
+  --c-glow2: #2dd4bf;
+  --c-qr-dark: #9a3412;
+  --c-qr-light: #ffffff;
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--c-bg-from);
+  --color-foreground: var(--c-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  border-color: var(--c-border-strong);
+}
+
+html {
+  background: var(--c-bg-from);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: linear-gradient(160deg, var(--c-bg-from), var(--c-bg-to));
+  color: var(--c-text);
+  transition: background 0.4s ease, color 0.4s ease;
+  min-height: 100dvh;
 }
 
 /* Soft ambient blobs behind the main card stack. Purely decorative. */
@@ -35,19 +238,27 @@ body {
   border-radius: 9999px;
   filter: blur(120px);
   opacity: 0.22;
+  transition: background 0.4s ease;
+}
+
+[data-theme="arctic-frost"] .void-glow::before,
+[data-theme="arctic-frost"] .void-glow::after,
+[data-theme="sandstorm"] .void-glow::before,
+[data-theme="sandstorm"] .void-glow::after {
+  opacity: 0.35;
 }
 
 .void-glow::before {
   top: -14rem;
   left: -10rem;
-  background: radial-gradient(circle, #ef4444, transparent 70%);
+  background: radial-gradient(circle, var(--c-glow1), transparent 70%);
   animation: void-drift-a 16s ease-in-out infinite alternate;
 }
 
 .void-glow::after {
   bottom: -16rem;
   right: -12rem;
-  background: radial-gradient(circle, #2563eb, transparent 70%);
+  background: radial-gradient(circle, var(--c-glow2), transparent 70%);
   animation: void-drift-b 18s ease-in-out infinite alternate;
 }
 
@@ -70,14 +281,96 @@ body {
 }
 
 .glass-card {
-  background: color-mix(in oklab, #18181b 82%, transparent);
+  background: color-mix(in oklab, var(--c-surface) 82%, transparent);
   backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in oklab, #ffffff 8%, transparent);
+  border: 1px solid var(--c-border);
+  transition: background 0.4s ease, border-color 0.4s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .void-glow::before,
   .void-glow::after {
     animation: none;
+  }
+}
+
+/* ==========================================================================
+   Loading screen animations (backend warm-up)
+   ========================================================================== */
+
+@keyframes ls-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ls-orbit-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes ls-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.6;
+  }
+}
+
+@keyframes ls-packet {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes ls-shimmer {
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes ls-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-orbit,
+  .ls-orbit-reverse,
+  .ls-node,
+  .ls-packet,
+  .ls-shimmer {
+    animation: none !important;
   }
 }
